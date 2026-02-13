@@ -141,6 +141,90 @@ Los tests utilizan **Orchestra Testbench**, que proporciona un entorno Laravel c
 - MapBoundsField (todos los tests)
 - MapBoundsEntry
 
+## Testing Manual con Webapp
+
+Para pruebas manuales e integración completa, puedes crear una aplicación Laravel de prueba:
+
+### 1. Crear Webapp Base
+
+```bash
+cd /workspace/packages/fields
+bash /workspace/.devcontainer/php/scripts/create-webapp.sh
+# Responder 'n' cuando pregunte si instalar el paquete
+```
+
+### 2. Instalar Filament
+
+```bash
+cd webapp
+composer require filament/filament:"^3.0"
+php artisan filament:install --panels
+php artisan make:filament-user # Crear usuario Admin, con email: admin@example.com y password: password1234567890 
+```
+
+### 3. Instalar el Paquete
+
+```bash
+composer require lbcdev/filament-maps-fields:@dev
+```
+
+### 4. Crear Recurso de Prueba
+
+```bash
+# Crear modelo y migración
+php artisan make:model Location -m
+
+# Crear recurso Filament
+php artisan make:filament-resource Location
+```
+
+### 5. Configurar Modelo y Migración
+
+**Migration** (`database/migrations/xxxx_create_locations_table.php`):
+
+```php
+$table->string('name');
+$table->decimal('latitude', 10, 8)->nullable();
+$table->decimal('longitude', 11, 8)->nullable();
+```
+
+**Model** (`app/Models/Location.php`):
+
+```php
+protected $fillable = ['name', 'latitude', 'longitude'];
+protected $casts = ['latitude' => 'float', 'longitude' => 'float'];
+```
+
+### 6. Configurar Recurso Filament
+
+**Resource** (`app/Filament/Resources/LocationResource.php`):
+
+```php
+use LBCDev\FilamentMapsFields\Forms\Components\MapField;
+
+public static function form(Form $form): Form
+{
+    return $form->schema([
+        Forms\Components\TextInput::make('name')->required(),
+        MapField::make('map')
+            ->latitude('latitude')
+            ->longitude('longitude')
+            ->height(400)
+            ->columnSpanFull(),
+    ]);
+}
+```
+
+### 7. Ejecutar y Probar
+
+```bash
+php artisan migrate
+php artisan make:filament-user  # Crear usuario admin
+php artisan serve
+```
+
+Acceder a `http://localhost:8000/admin` y probar el recurso Location.
+
 ## Notas
 
 - Los tests de MapField cubren tanto el modo tradicional (campos separados) como el modo JSON (campos anidados)
