@@ -218,7 +218,7 @@
         <div
             id="map-bounds-{{ $statePath }}"
             class="w-full rounded-lg border border-gray-300 dark:border-gray-600"
-            style="height: {{ $height }}px;"
+            style="height: {{ $height }}px; position: relative; z-index: 0;"
             wire:ignore
         ></div>
     </div>
