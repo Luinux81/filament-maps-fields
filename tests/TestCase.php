@@ -1,9 +1,9 @@
 <?php
 
-namespace Lbcdev\FilamentMapField\Tests;
+namespace LBCDev\FilamentMapsFields\Tests;
 
 use Filament\FilamentServiceProvider;
-use Lbcdev\FilamentMapField\FilamentMapFieldServiceProvider;
+use LBCDev\FilamentMapsFields\FilamentMapsFieldsServiceProvider;
 use Livewire\LivewireServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
 
@@ -25,7 +25,7 @@ abstract class TestCase extends Orchestra
         return [
             LivewireServiceProvider::class,
             FilamentServiceProvider::class,
-            FilamentMapFieldServiceProvider::class,
+            FilamentMapsFieldsServiceProvider::class,
         ];
     }
 

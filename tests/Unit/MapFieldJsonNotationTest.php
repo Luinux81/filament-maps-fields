@@ -1,10 +1,10 @@
 <?php
 
-namespace Lbcdev\FilamentMapField\Tests\Unit;
+namespace LBCDev\FilamentMapsFields\Tests\Unit;
 
-use Lbcdev\FilamentMapField\Forms\Components\MapField;
-use Lbcdev\FilamentMapField\Tests\Fixtures\Models\Store;
-use Lbcdev\FilamentMapField\Tests\TestCase;
+use LBCDev\FilamentMapsFields\Forms\Components\MapField;
+use LBCDev\FilamentMapsFields\Tests\Fixtures\Models\Store;
+use LBCDev\FilamentMapsFields\Tests\TestCase;
 
 class MapFieldJsonNotationTest extends TestCase
 {

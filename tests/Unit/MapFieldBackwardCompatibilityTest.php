@@ -1,10 +1,10 @@
 <?php
 
-namespace Lbcdev\FilamentMapField\Tests\Unit;
+namespace LBCDev\FilamentMapsFields\Tests\Unit;
 
-use Lbcdev\FilamentMapField\Forms\Components\MapField;
-use Lbcdev\FilamentMapField\Tests\Fixtures\Models\Location;
-use Lbcdev\FilamentMapField\Tests\TestCase;
+use LBCDev\FilamentMapsFields\Forms\Components\MapField;
+use LBCDev\FilamentMapsFields\Tests\Fixtures\Models\Location;
+use LBCDev\FilamentMapsFields\Tests\TestCase;
 
 /**
  * Tests to ensure backward compatibility with the traditional mode (separate fields)

@@ -1,6 +1,6 @@
 <?php
 
-namespace Lbcdev\FilamentMapField\Tests\Fixtures\Models;
+namespace LBCDev\FilamentMapsFields\Tests\Fixtures\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
@@ -19,4 +19,3 @@ class Area extends Model
         'bounds' => 'array',
     ];
 }
-

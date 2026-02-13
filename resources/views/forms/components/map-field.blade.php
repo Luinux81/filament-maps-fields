@@ -1,8 +1,11 @@
 <x-dynamic-component :component="$getFieldWrapperView()" :field="$field">
     @php
+        // Get current coordinates from the form
         $coordinates = $getCoordinates();
         $latitude = $coordinates['latitude'];
         $longitude = $coordinates['longitude'];
+        
+        // Get field configuration
         $latitudeField = $getLatitudeField();
         $longitudeField = $getLongitudeField();
         $height = $getHeight();
@@ -10,9 +13,10 @@
         $showPasteButton = $shouldShowPasteButton();
         $showLabel = $shouldShowLabel();
         $interactive = $isInteractive();
-        $statePath = $getStatePath();
         $isDisabled = $isDisabled();
-        // Enable debug logs with ?map_debug=1 in URL or set APP_DEBUG_MAP=true in .env
+        $statePath = $getStatePath();
+        
+        // Debug mode can be enabled with ?map_debug=1 in URL or APP_DEBUG_MAP=true in .env
         $debugMode = request()->has('map_debug') || config('app.debug_map', false);
     @endphp
 
@@ -24,70 +28,95 @@
             longitudeField: @js($longitudeField),
             debug: @js($debugMode),
 
+            /**
+             * Log a message to console if debug mode is enabled
+             */
             log(...args) {
                 if (this.debug) {
-                    console.log(...args);
+                    console.log('[MapField Debug]', ...args);
                 }
             },
 
+            /**
+             * Log a warning to console if debug mode is enabled
+             */
             warn(...args) {
                 if (this.debug) {
-                    console.warn(...args);
+                    console.warn('[MapField Warning]', ...args);
                 }
             },
 
+            /**
+             * Update the form fields with new coordinates
+             * 
+             * This method handles both simple field names ('latitude')
+             * and dot notation for nested fields ('location.latitude')
+             */
             updateCoordinates(lat, lng) {
-                if (this.latitudeField && this.longitudeField) {
-                    // Support both simple fields ('latitude') and nested fields ('ubicacion.latitud')
-                    // The dot notation is automatically handled by Livewire's $set method
-                    const latPath = 'data.' + this.latitudeField;
-                    const lngPath = 'data.' + this.longitudeField;
-
-                    this.log('🗺️ Actualizando paths:', { latPath, lngPath });
-                    this.log('🗺️ Valores a guardar:', { latitude: lat, longitude: lng });
-
-                    $wire.$set(latPath, lat);
-                    $wire.$set(lngPath, lng);
-
-                    // Update local state
-                    this.latitude = lat;
-                    this.longitude = lng;
-
-                    this.log('✅ Coordenadas actualizadas correctamente');
+                if (!this.latitudeField || !this.longitudeField) {
+                    this.warn('Latitude or longitude field not configured');
+                    return;
                 }
+
+                // Build the full path for Livewire's $set method
+                // The 'data.' prefix is required by Filament forms
+                const latPath = 'data.' + this.latitudeField;
+                const lngPath = 'data.' + this.longitudeField;
+
+                this.log('Updating coordinates:', {
+                    latPath,
+                    lngPath,
+                    latitude: lat,
+                    longitude: lng
+                });
+
+                // Update the form fields via Livewire
+                $wire.$set(latPath, lat);
+                $wire.$set(lngPath, lng);
+
+                // Update local state for reactivity
+                this.latitude = lat;
+                this.longitude = lng;
+
+                this.log('Coordinates updated successfully');
             },
 
+            /**
+             * Initialize the component
+             * 
+             * Sets up event listeners for coordinate updates from the map component
+             */
             init() {
-                // Listen for coordinate updates from the livewire map component
+                // Listen for coordinate updates via window events
+                // This is the primary method used by livewire-maps-core
                 window.addEventListener('map-coordinates-updated', (event) => {
                     const data = event.detail;
-                    this.log('🗺️ Evento window map-coordinates-updated recibido:', data);
+                    
+                    this.log('Received window event:', data);
 
                     if (data && data.latitude !== undefined && data.longitude !== undefined) {
                         this.updateCoordinates(data.latitude, data.longitude);
+                    } else {
+                        this.warn('Invalid event data:', data);
                     }
                 });
 
                 // Also listen for Livewire events (for backward compatibility)
                 Livewire.on('map-coordinates-updated', (eventData) => {
-                    this.log('🗺️ Evento Livewire map-coordinates-updated recibido (raw):', eventData);
+                    this.log('Received Livewire event (raw):', eventData);
 
-                    // Livewire 3 wraps parameters in an array, so we need to extract the first element
+                    // Livewire 3 wraps event parameters in an array
                     const data = Array.isArray(eventData) ? eventData[0] : eventData;
 
-                    this.log('🗺️ Datos extraídos:', data);
-                    this.log('🗺️ Campos configurados:', {
-                        latitudeField: this.latitudeField,
-                        longitudeField: this.longitudeField
-                    });
+                    this.log('Extracted event data:', data);
 
                     if (data && data.latitude !== undefined && data.longitude !== undefined) {
                         this.updateCoordinates(data.latitude, data.longitude);
                     } else {
-                        this.warn('⚠️ Faltan datos:', {
+                        this.warn('Invalid Livewire event data:', {
                             hasLatitudeField: !!this.latitudeField,
                             hasLongitudeField: !!this.longitudeField,
-                            hasData: !!data
+                            data
                         });
                     }
                 });
@@ -95,7 +124,13 @@
         }"
         wire:key="{{ $statePath }}-map-field"
     >
-        <livewire:lbcdev-map
+        {{-- 
+            Render the livewire-maps-core component
+            
+            Note: We use 'livewire:livewire-map' which is the correct component name
+            from the lbcdev/livewire-maps-core package
+        --}}
+        <livewire:livewire-map
             :latitude="$latitude"
             :longitude="$longitude"
             :interactive="$interactive && !$isDisabled"
@@ -103,8 +138,7 @@
             :showPasteButton="$showPasteButton"
             :height="$height"
             :zoom="$zoom"
-            wire:key="{{ $statePath }}-lbcdev-map"
+            wire:key="{{ $statePath }}-livewire-map"
         />
     </div>
 </x-dynamic-component>
-

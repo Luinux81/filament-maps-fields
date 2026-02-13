@@ -1,6 +1,6 @@
 <?php
 
-namespace Lbcdev\FilamentMapField\Tests\Fixtures\Models;
+namespace LBCDev\FilamentMapsFields\Tests\Fixtures\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
@@ -38,4 +38,3 @@ class Store extends Model
         return isset($this->ubicacion['longitud']) ? (float) $this->ubicacion['longitud'] : null;
     }
 }
-

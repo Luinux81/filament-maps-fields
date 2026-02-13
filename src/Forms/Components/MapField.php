@@ -1,32 +1,82 @@
 <?php
 
-namespace Lbcdev\FilamentMapField\Forms\Components;
+namespace LBCDev\FilamentMapsFields\Forms\Components;
 
 use Filament\Forms\Components\Field;
 
+/**
+ * MapField - Filament form field for interactive maps
+ * 
+ * This component integrates the livewire-maps-core component into Filament forms,
+ * allowing users to select coordinates on an interactive map and store them
+ * in separate latitude/longitude fields.
+ * 
+ * @package LBCDev\FilamentMapsFields
+ */
 class MapField extends Field
 {
-    protected string $view = 'filament-map-field::forms.components.map-field';
+    /**
+     * The Blade view for this field
+     */
+    protected string $view = 'filament-maps-fields::forms.components.map-field';
 
-    protected string|null $latitudeField = null;
-    protected string|null $longitudeField = null;
+    /**
+     * Name of the latitude field in the form
+     */
+    protected ?string $latitudeField = null;
+
+    /**
+     * Name of the longitude field in the form
+     */
+    protected ?string $longitudeField = null;
+
+    /**
+     * Map height in pixels
+     */
     protected int $height = 400;
+
+    /**
+     * Default zoom level for the map
+     */
     protected int $zoom = 15;
+
+    /**
+     * Whether to show the paste coordinates button
+     */
     protected bool $showPasteButton = false;
+
+    /**
+     * Whether to show the coordinates label
+     */
     protected bool $showLabel = true;
+
+    /**
+     * Whether the map is interactive (clickable)
+     */
     protected bool $interactive = true;
 
     /**
-     * Setup the field to not require validation
-     * This prevents issues when using dot notation with nested fields
+     * Setup the field
+     * 
+     * @return void
      */
     protected function setUp(): void
     {
         parent::setUp();
+
+        // The field itself doesn't store data, it only facilitates
+        // updating other fields (latitude/longitude), so we don't need
+        // validation on this field itself
     }
 
     /**
      * Set the latitude field name
+     * 
+     * Supports both simple field names ('latitude') and dot notation
+     * for nested fields ('location.latitude')
+     * 
+     * @param string $field The field name
+     * @return static
      */
     public function latitude(string $field): static
     {
@@ -36,6 +86,12 @@ class MapField extends Field
 
     /**
      * Set the longitude field name
+     * 
+     * Supports both simple field names ('longitude') and dot notation
+     * for nested fields ('location.longitude')
+     * 
+     * @param string $field The field name
+     * @return static
      */
     public function longitude(string $field): static
     {
@@ -45,6 +101,9 @@ class MapField extends Field
 
     /**
      * Set the map height in pixels
+     * 
+     * @param int $height Height in pixels
+     * @return static
      */
     public function height(int $height): static
     {
@@ -54,6 +113,9 @@ class MapField extends Field
 
     /**
      * Set the default zoom level
+     * 
+     * @param int $zoom Zoom level (typically 1-20)
+     * @return static
      */
     public function zoom(int $zoom): static
     {
@@ -62,7 +124,10 @@ class MapField extends Field
     }
 
     /**
-     * Show the paste coordinates button
+     * Show or hide the paste coordinates button
+     * 
+     * @param bool $show Whether to show the button
+     * @return static
      */
     public function showPasteButton(bool $show = true): static
     {
@@ -71,7 +136,10 @@ class MapField extends Field
     }
 
     /**
-     * Show the coordinates label
+     * Show or hide the coordinates label
+     * 
+     * @param bool $show Whether to show the label
+     * @return static
      */
     public function showLabel(bool $show = true): static
     {
@@ -80,7 +148,12 @@ class MapField extends Field
     }
 
     /**
-     * Set if the map is interactive
+     * Set whether the map is interactive
+     * 
+     * When false, the map is read-only and cannot be clicked
+     * 
+     * @param bool $interactive Whether the map is interactive
+     * @return static
      */
     public function interactive(bool $interactive = true): static
     {
@@ -90,7 +163,12 @@ class MapField extends Field
 
     /**
      * Make the field read-only (non-interactive)
-     * This is an alias for interactive(false) to maintain compatibility with Filament's standard API
+     * 
+     * This is an alias for interactive(false) to maintain compatibility
+     * with Filament's standard API
+     * 
+     * @param bool $condition Whether to make it read-only
+     * @return static
      */
     public function readOnly(bool $condition = true): static
     {
@@ -100,6 +178,8 @@ class MapField extends Field
 
     /**
      * Get the latitude field name
+     * 
+     * @return string|null
      */
     public function getLatitudeField(): ?string
     {
@@ -108,6 +188,8 @@ class MapField extends Field
 
     /**
      * Get the longitude field name
+     * 
+     * @return string|null
      */
     public function getLongitudeField(): ?string
     {
@@ -116,6 +198,8 @@ class MapField extends Field
 
     /**
      * Get the map height
+     * 
+     * @return int
      */
     public function getHeight(): int
     {
@@ -124,6 +208,8 @@ class MapField extends Field
 
     /**
      * Get the zoom level
+     * 
+     * @return int
      */
     public function getZoom(): int
     {
@@ -132,6 +218,8 @@ class MapField extends Field
 
     /**
      * Check if paste button should be shown
+     * 
+     * @return bool
      */
     public function shouldShowPasteButton(): bool
     {
@@ -140,6 +228,8 @@ class MapField extends Field
 
     /**
      * Check if label should be shown
+     * 
+     * @return bool
      */
     public function shouldShowLabel(): bool
     {
@@ -148,6 +238,8 @@ class MapField extends Field
 
     /**
      * Check if map is interactive
+     * 
+     * @return bool
      */
     public function isInteractive(): bool
     {
@@ -155,31 +247,22 @@ class MapField extends Field
     }
 
     /**
-     * Get the current coordinates from the form
-     *
-     * Supports both simple field names and dot notation for nested fields:
+     * Get the current coordinates from the form state
+     * 
+     * This method safely retrieves the latitude and longitude values
+     * from the form, supporting both simple field names and dot notation
+     * for nested fields.
+     * 
+     * Examples:
      * - Simple: 'latitude', 'longitude'
-     * - Nested: 'ubicacion.latitud', 'ubicacion.longitud'
+     * - Nested: 'location.latitude', 'location.longitude'
+     * 
+     * @return array{latitude: float|null, longitude: float|null}
      */
-    // public function getCoordinates(): array
-    // {
-    //     $container = $this->getContainer();
-
-    //     if ($this->latitudeField && $this->longitudeField) {
-    //         return [
-    //             'latitude' => data_get($container->getState(), $this->latitudeField),
-    //             'longitude' => data_get($container->getState(), $this->longitudeField),
-    //         ];
-    //     }
-
-    //     return [
-    //         'latitude' => null,
-    //         'longitude' => null,
-    //     ];
-    // }
     public function getCoordinates(): array
     {
         try {
+            // If fields are not configured, return null coordinates
             if (!$this->latitudeField || !$this->longitudeField) {
                 return [
                     'latitude' => null,
@@ -196,25 +279,24 @@ class MapField extends Field
                 ];
             }
 
-            // Try to get state without triggering validation
             $state = null;
 
-            // First, try to get from the record if it exists (edit mode)
+            // In edit mode, try to get from the record
             if (method_exists($container, 'getRecord') && $record = $container->getRecord()) {
                 $state = $record->toArray();
             }
-            // Otherwise, try to get the raw state (create mode)
+            // In create mode, get the raw state
             else {
-                // Use getRawState if available, otherwise getState
                 $state = method_exists($container, 'getRawState')
                     ? $container->getRawState()
                     : $container->getState();
             }
 
+            // Use Laravel's data_get helper to support dot notation
             $latitude = data_get($state, $this->latitudeField);
             $longitude = data_get($state, $this->longitudeField);
 
-            // Convert empty strings to null and numeric strings to float
+            // Normalize the values
             $latitude = $this->normalizeCoordinate($latitude);
             $longitude = $this->normalizeCoordinate($longitude);
 
@@ -223,7 +305,8 @@ class MapField extends Field
                 'longitude' => $longitude,
             ];
         } catch (\Throwable $e) {
-            // If anything fails, return null coordinates
+            // If anything fails, safely return null coordinates
+            // This prevents the form from breaking if there are issues
             return [
                 'latitude' => null,
                 'longitude' => null,
@@ -233,25 +316,34 @@ class MapField extends Field
 
     /**
      * Normalize a coordinate value to float or null
+     * 
+     * Handles various input types and converts them to the appropriate format:
+     * - null or empty string → null
+     * - float → returned as-is
+     * - numeric string → converted to float
+     * - non-numeric → null
+     * 
+     * @param mixed $value The value to normalize
+     * @return float|null
      */
-    protected function normalizeCoordinate($value): ?float
+    protected function normalizeCoordinate(mixed $value): ?float
     {
-        // If null or empty string, return null
+        // Null or empty string becomes null
         if ($value === null || $value === '') {
             return null;
         }
 
-        // If already a float, return as is
+        // Already a float, return as-is
         if (is_float($value)) {
             return $value;
         }
 
-        // If it's a numeric string, convert to float
+        // Numeric string, convert to float
         if (is_numeric($value)) {
             return (float) $value;
         }
 
-        // Otherwise, return null
+        // Invalid value, return null
         return null;
     }
 }

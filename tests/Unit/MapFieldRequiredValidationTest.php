@@ -1,9 +1,9 @@
 <?php
 
-namespace Lbcdev\FilamentMapField\Tests\Unit;
+namespace LBCDev\FilamentMapsFields\Tests\Unit;
 
-use Lbcdev\FilamentMapField\Forms\Components\MapField;
-use Lbcdev\FilamentMapField\Tests\TestCase;
+use LBCDev\FilamentMapsFields\Forms\Components\MapField;
+use LBCDev\FilamentMapsFields\Tests\TestCase;
 
 class MapFieldRequiredValidationTest extends TestCase
 {
@@ -37,9 +37,8 @@ class MapFieldRequiredValidationTest extends TestCase
             ->required();
 
         $rules = $field->getValidationRules();
-        
+
         $this->assertNotEmpty($rules);
         $this->assertContains('required', $rules);
     }
 }
-

@@ -1,9 +1,9 @@
 <?php
 
-namespace Lbcdev\FilamentMapField\Tests\Unit;
+namespace LBCDev\FilamentMapsFields\Tests\Unit;
 
-use Lbcdev\FilamentMapField\Infolists\Entries\MapEntry;
-use Lbcdev\FilamentMapField\Tests\TestCase;
+use LBCDev\FilamentMapsFields\Infolists\Entries\MapEntry;
+use LBCDev\FilamentMapsFields\Tests\TestCase;
 
 class MapEntryTest extends TestCase
 {
@@ -104,4 +104,3 @@ class MapEntryTest extends TestCase
         $this->assertFalse($entry->shouldShowLabel());
     }
 }
-
