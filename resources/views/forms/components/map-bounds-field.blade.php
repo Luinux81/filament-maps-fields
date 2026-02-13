@@ -5,19 +5,20 @@
         $swLng = $bounds['sw_lng'];
         $neLat = $bounds['ne_lat'];
         $neLng = $bounds['ne_lng'];
-        
+
+        $isLegacyMode = $isLegacyMode();
         $swLatField = $getSouthWestLatField();
         $swLngField = $getSouthWestLngField();
         $neLatField = $getNorthEastLatField();
         $neLngField = $getNorthEastLngField();
-        
+
         $height = $getHeight();
         $zoom = $getZoom();
         $showLabel = $shouldShowLabel();
         $defaultCenter = $getDefaultCenter();
         $statePath = $getStatePath();
         $isDisabled = $isDisabled();
-        
+
         // Calculate center for the map
         if ($swLat && $swLng && $neLat && $neLng) {
             $centerLat = ($swLat + $neLat) / 2;
@@ -31,7 +32,7 @@
             $neLat = $neLat ?? $centerLat + 0.01;
             $neLng = $neLng ?? $centerLng + 0.01;
         }
-        
+
         // Enable debug logs with ?map_debug=1 in URL or set APP_DEBUG_MAP=true in .env
         $debugMode = request()->has('map_debug') || config('app.debug_map', false);
     @endphp
@@ -44,6 +45,8 @@
                 ne_lat: @js($neLat),
                 ne_lng: @js($neLng),
             },
+            isLegacyMode: @js($isLegacyMode),
+            statePath: @js($statePath),
             swLatField: @js($swLatField),
             swLngField: @js($swLngField),
             neLatField: @js($neLatField),
@@ -81,14 +84,26 @@
                     ne_lng: neLng,
                 };
 
-                // Update form fields with dot notation support
-                if (this.swLatField && this.swLngField && this.neLatField && this.neLngField) {
-                    $wire.$set('data.' + this.swLatField, swLat);
-                    $wire.$set('data.' + this.swLngField, swLng);
-                    $wire.$set('data.' + this.neLatField, neLat);
-                    $wire.$set('data.' + this.neLngField, neLng);
-                    
-                    this.log('✅ Bounds actualizados correctamente');
+                if (this.isLegacyMode) {
+                    // Legacy mode: update 4 separate fields
+                    if (this.swLatField && this.swLngField && this.neLatField && this.neLngField) {
+                        $wire.$set('data.' + this.swLatField, swLat);
+                        $wire.$set('data.' + this.swLngField, swLng);
+                        $wire.$set('data.' + this.neLatField, neLat);
+                        $wire.$set('data.' + this.neLngField, neLng);
+
+                        this.log('✅ Bounds actualizados (Legacy Mode)');
+                    }
+                } else {
+                    // JSON mode: update single field with object
+                    $wire.$set(this.statePath, {
+                        sw_lat: swLat,
+                        sw_lng: swLng,
+                        ne_lat: neLat,
+                        ne_lng: neLng
+                    });
+
+                    this.log('✅ Bounds actualizados (JSON Mode)');
                 }
             },
 

@@ -1,10 +1,10 @@
 <?php
 
-namespace Lbcdev\FilamentMapField\Tests\Unit;
+namespace LBCDev\FilamentMapsFields\Tests\Unit;
 
-use Lbcdev\FilamentMapField\Infolists\Entries\MapBoundsEntry;
-use Lbcdev\FilamentMapField\Tests\Fixtures\Models\Area;
-use Lbcdev\FilamentMapField\Tests\TestCase;
+use LBCDev\FilamentMapsFields\Infolists\Entries\MapBoundsEntry;
+use LBCDev\FilamentMapsFields\Tests\Fixtures\Models\Area;
+use LBCDev\FilamentMapsFields\Tests\TestCase;
 
 class MapBoundsEntryTest extends TestCase
 {
@@ -166,4 +166,3 @@ class MapBoundsEntryTest extends TestCase
         $this->assertFalse($entry->shouldShowLabel());
     }
 }
-

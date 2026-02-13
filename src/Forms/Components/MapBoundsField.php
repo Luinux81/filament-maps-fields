@@ -1,12 +1,32 @@
 <?php
 
-namespace Lbcdev\FilamentMapField\Forms\Components;
+namespace LBCDev\FilamentMapsFields\Forms\Components;
 
 use Filament\Forms\Components\Field;
 
+/**
+ * MapBoundsField - Select map bounds (rectangular area)
+ *
+ * Allows users to draw and edit a rectangular area on a map.
+ * Requires Leaflet.js and Leaflet.draw plugin.
+ *
+ * Supports two modes:
+ * - JSON Mode (default): Stores bounds as {sw_lat, sw_lng, ne_lat, ne_lng} in a single field
+ * - Legacy Mode: Stores bounds in 4 separate fields
+ *
+ * @example JSON Mode (recommended)
+ * MapBoundsField::make('bounds')
+ *
+ * @example Legacy Mode
+ * MapBoundsField::make('area_bounds')
+ *     ->southWestLat('sw_lat')
+ *     ->southWestLng('sw_lng')
+ *     ->northEastLat('ne_lat')
+ *     ->northEastLng('ne_lng')
+ */
 class MapBoundsField extends Field
 {
-    protected string $view = 'filament-map-field::forms.components.map-bounds-field';
+    protected string $view = 'filament-maps-fields::forms.components.map-bounds-field';
 
     protected string|null $southWestLatField = null;
     protected string|null $southWestLngField = null;
@@ -18,50 +38,97 @@ class MapBoundsField extends Field
     protected array $defaultCenter = [36.9990019, -6.5478919]; // Default center (Spain)
 
     /**
-     * Setup the field to not require validation
-     * This prevents issues when using dot notation with nested fields
+     * Check if the field is in legacy mode (4 separate fields)
+     */
+    public function isLegacyMode(): bool
+    {
+        return $this->southWestLatField !== null
+            && $this->southWestLngField !== null
+            && $this->northEastLatField !== null
+            && $this->northEastLngField !== null;
+    }
+
+    /**
+     * Setup the field with dual mode support
      */
     protected function setUp(): void
     {
         parent::setUp();
 
-        // Make the field not required by default
-        // This prevents validation errors in create mode when using dot notation
         $this->default(null);
-        $this->dehydrated(false); // Don't save this field itself, only the nested fields
 
-        // Add custom validation rules when the field is marked as required
+        // Configure based on mode
+        $this->afterStateHydrated(function (MapBoundsField $component, $state) {
+            if ($this->isLegacyMode()) {
+                // Legacy mode: field is virtual, don't save it
+                $component->dehydrated(false);
+            } else {
+                // JSON mode: ensure state is properly formatted
+                if (is_array($state) && !empty($state)) {
+                    $component->state($state);
+                }
+            }
+        });
+
+        // Handle dehydration for JSON mode
+        $this->dehydrateStateUsing(function ($state) {
+            if ($this->isLegacyMode()) {
+                // Legacy mode: don't save anything (handled by separate fields)
+                return null;
+            }
+
+            // JSON mode: save as array
+            if (is_array($state) && !empty($state)) {
+                return $state;
+            }
+
+            return null;
+        });
+
+        // Validation
         $this->rule(function () {
             return function (string $attribute, $value, \Closure $fail) {
-                // Only validate if the field is marked as required
                 if (!$this->isRequired()) {
                     return;
                 }
 
-                // Get the container to access form state
-                $container = $this->getContainer();
-                if (!$container) {
-                    return;
-                }
+                if ($this->isLegacyMode()) {
+                    // Legacy mode validation
+                    $container = $this->getContainer();
+                    if (!$container) {
+                        return;
+                    }
 
-                // Get the state (works in both create and edit modes)
-                $state = method_exists($container, 'getRawState')
-                    ? $container->getRawState()
-                    : $container->getState();
+                    $state = method_exists($container, 'getRawState')
+                        ? $container->getRawState()
+                        : $container->getState();
 
-                // Check if all bound fields are set and have values
-                $swLat = data_get($state, $this->southWestLatField);
-                $swLng = data_get($state, $this->southWestLngField);
-                $neLat = data_get($state, $this->northEastLatField);
-                $neLng = data_get($state, $this->northEastLngField);
+                    $swLat = data_get($state, $this->southWestLatField);
+                    $swLng = data_get($state, $this->southWestLngField);
+                    $neLat = data_get($state, $this->northEastLatField);
+                    $neLng = data_get($state, $this->northEastLngField);
 
-                if (
-                    $swLat === null || $swLat === '' ||
-                    $swLng === null || $swLng === '' ||
-                    $neLat === null || $neLat === '' ||
-                    $neLng === null || $neLng === ''
-                ) {
-                    $fail('El campo de límites es requerido.');
+                    if (
+                        $swLat === null || $swLat === '' ||
+                        $swLng === null || $swLng === '' ||
+                        $neLat === null || $neLat === '' ||
+                        $neLng === null || $neLng === ''
+                    ) {
+                        $fail('El campo de límites es requerido.');
+                    }
+                } else {
+                    // JSON mode validation
+                    if (!is_array($value) || empty($value)) {
+                        $fail('El campo de límites es requerido.');
+                        return;
+                    }
+
+                    if (
+                        !isset($value['sw_lat']) || !isset($value['sw_lng']) ||
+                        !isset($value['ne_lat']) || !isset($value['ne_lng'])
+                    ) {
+                        $fail('El campo de límites es requerido.');
+                    }
                 }
             };
         });
@@ -209,21 +276,31 @@ class MapBoundsField extends Field
 
     /**
      * Get the current bounds from the form
-     * Supports both simple field names and dot notation for nested fields
+     * Supports both JSON mode and Legacy mode
      */
     public function getBounds(): array
     {
-        $container = $this->getContainer();
+        if ($this->isLegacyMode()) {
+            // Legacy mode: read from separate fields
+            $container = $this->getContainer();
 
-        if (
-            $this->southWestLatField && $this->southWestLngField &&
-            $this->northEastLatField && $this->northEastLngField
-        ) {
             return [
                 'sw_lat' => data_get($container->getState(), $this->southWestLatField),
                 'sw_lng' => data_get($container->getState(), $this->southWestLngField),
                 'ne_lat' => data_get($container->getState(), $this->northEastLatField),
                 'ne_lng' => data_get($container->getState(), $this->northEastLngField),
+            ];
+        }
+
+        // JSON mode: read from field state
+        $state = $this->getState();
+
+        if (is_array($state) && !empty($state)) {
+            return [
+                'sw_lat' => $state['sw_lat'] ?? null,
+                'sw_lng' => $state['sw_lng'] ?? null,
+                'ne_lat' => $state['ne_lat'] ?? null,
+                'ne_lng' => $state['ne_lng'] ?? null,
             ];
         }
 

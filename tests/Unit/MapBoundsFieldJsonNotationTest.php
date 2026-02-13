@@ -1,10 +1,10 @@
 <?php
 
-namespace Lbcdev\FilamentMapField\Tests\Unit;
+namespace LBCDev\FilamentMapsFields\Tests\Unit;
 
-use Lbcdev\FilamentMapField\Forms\Components\MapBoundsField;
-use Lbcdev\FilamentMapField\Tests\Fixtures\Models\Area;
-use Lbcdev\FilamentMapField\Tests\TestCase;
+use LBCDev\FilamentMapsFields\Forms\Components\MapBoundsField;
+use LBCDev\FilamentMapsFields\Tests\Fixtures\Models\Area;
+use LBCDev\FilamentMapsFields\Tests\TestCase;
 
 class MapBoundsFieldJsonNotationTest extends TestCase
 {
@@ -110,4 +110,3 @@ class MapBoundsFieldJsonNotationTest extends TestCase
         $this->assertEquals('bounds.ne_lng', $field->getNorthEastLngField());
     }
 }
-

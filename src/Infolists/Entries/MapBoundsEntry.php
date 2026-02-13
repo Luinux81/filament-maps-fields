@@ -1,12 +1,32 @@
 <?php
 
-namespace Lbcdev\FilamentMapField\Infolists\Entries;
+namespace LBCDev\FilamentMapsFields\Infolists\Entries;
 
 use Filament\Infolists\Components\Entry;
 
+/**
+ * MapBoundsEntry - Display map bounds in an infolist
+ *
+ * Shows a rectangular area on a map (read-only).
+ * Requires Leaflet.js and Leaflet.draw plugin.
+ *
+ * Supports two modes:
+ * - JSON Mode (default): Reads bounds from {sw_lat, sw_lng, ne_lat, ne_lng} in a single field
+ * - Legacy Mode: Reads bounds from 4 separate fields
+ *
+ * @example JSON Mode (recommended)
+ * MapBoundsEntry::make('bounds')
+ *
+ * @example Legacy Mode
+ * MapBoundsEntry::make('area_bounds')
+ *     ->southWestLat('sw_lat')
+ *     ->southWestLng('sw_lng')
+ *     ->northEastLat('ne_lat')
+ *     ->northEastLng('ne_lng')
+ */
 class MapBoundsEntry extends Entry
 {
-    protected string $view = 'filament-map-field::infolists.entries.map-bounds-entry';
+    protected string $view = 'filament-maps-fields::infolists.entries.map-bounds-entry';
 
     protected string|null $southWestLatField = null;
     protected string|null $southWestLngField = null;
@@ -15,6 +35,17 @@ class MapBoundsEntry extends Entry
     protected int $height = 300;
     protected int $zoom = 13;
     protected bool $showLabel = true;
+
+    /**
+     * Check if the entry is in legacy mode (4 separate fields)
+     */
+    public function isLegacyMode(): bool
+    {
+        return $this->southWestLatField !== null
+            && $this->southWestLngField !== null
+            && $this->northEastLatField !== null
+            && $this->northEastLngField !== null;
+    }
 
     /**
      * Set the south-west latitude field name
@@ -141,39 +172,58 @@ class MapBoundsEntry extends Entry
 
     /**
      * Get the current bounds from the record
-     * Supports both simple field names and dot notation for nested fields
+     * Supports both JSON mode and Legacy mode
      */
     public function getBounds(): ?array
     {
         try {
-            if (!$this->southWestLatField || !$this->southWestLngField || 
-                !$this->northEastLatField || !$this->northEastLngField) {
-                return null;
-            }
-
             $record = $this->getRecord();
 
             if (!$record) {
                 return null;
             }
 
-            $swLat = $this->normalizeCoordinate(data_get($record, $this->southWestLatField));
-            $swLng = $this->normalizeCoordinate(data_get($record, $this->southWestLngField));
-            $neLat = $this->normalizeCoordinate(data_get($record, $this->northEastLatField));
-            $neLng = $this->normalizeCoordinate(data_get($record, $this->northEastLngField));
+            if ($this->isLegacyMode()) {
+                // Legacy mode: read from separate fields
+                $swLat = $this->normalizeCoordinate(data_get($record, $this->southWestLatField));
+                $swLng = $this->normalizeCoordinate(data_get($record, $this->southWestLngField));
+                $neLat = $this->normalizeCoordinate(data_get($record, $this->northEastLatField));
+                $neLng = $this->normalizeCoordinate(data_get($record, $this->northEastLngField));
 
-            // Only return if all coordinates are valid
-            if ($swLat !== null && $swLng !== null && $neLat !== null && $neLng !== null) {
-                return [
-                    'sw_lat' => $swLat,
-                    'sw_lng' => $swLng,
-                    'ne_lat' => $neLat,
-                    'ne_lng' => $neLng,
-                ];
+                // Only return if all coordinates are valid
+                if ($swLat !== null && $swLng !== null && $neLat !== null && $neLng !== null) {
+                    return [
+                        'sw_lat' => $swLat,
+                        'sw_lng' => $swLng,
+                        'ne_lat' => $neLat,
+                        'ne_lng' => $neLng,
+                    ];
+                }
+
+                return null;
+            }
+
+            // JSON mode: read from state
+            $state = $this->getState();
+
+            if (is_array($state) && !empty($state)) {
+                $swLat = $this->normalizeCoordinate($state['sw_lat'] ?? null);
+                $swLng = $this->normalizeCoordinate($state['sw_lng'] ?? null);
+                $neLat = $this->normalizeCoordinate($state['ne_lat'] ?? null);
+                $neLng = $this->normalizeCoordinate($state['ne_lng'] ?? null);
+
+                if ($swLat !== null && $swLng !== null && $neLat !== null && $neLng !== null) {
+                    return [
+                        'sw_lat' => $swLat,
+                        'sw_lng' => $swLng,
+                        'ne_lat' => $neLat,
+                        'ne_lng' => $neLng,
+                    ];
+                }
             }
 
             return null;
-        } catch (\Throwable $e) {
+        } catch (\Throwable) {
             return null;
         }
     }
@@ -198,4 +248,3 @@ class MapBoundsEntry extends Entry
         return null;
     }
 }
-

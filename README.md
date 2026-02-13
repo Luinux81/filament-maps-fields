@@ -61,6 +61,8 @@ public function panel(Panel $panel): Panel
 }
 ```
 
+**Nota:** El hook incluye automáticamente Leaflet.js y Leaflet.draw (requerido para MapBoundsField).
+
 **Opción alternativa: Layout personalizado**
 
 Si estás usando un layout personalizado de Filament, agrega estos scripts en el `<head>` (antes de `@livewireStyles`):
@@ -82,6 +84,15 @@ php artisan vendor:publish --tag=livewire-maps-config
 ```
 
 ## Uso Básico
+
+### Componentes Disponibles
+
+Este paquete incluye dos componentes principales:
+
+- **MapField** - Seleccionar un punto en el mapa (latitud/longitud)
+- **MapBoundsField** - Seleccionar un área rectangular (bounds)
+
+Ambos componentes soportan **Dual Mode** (JSON y Legacy).
 
 ### MapField en Formularios
 
@@ -493,6 +504,26 @@ public static function form(Form $form): Form
             ->zoom(15),
     ]);
 }
+```
+
+### MapBoundsField - Seleccionar Área Rectangular
+
+**Modo JSON:**
+```php
+use LBCDev\FilamentMapsFields\Forms\Components\MapBoundsField;
+
+MapBoundsField::make('bounds')  // Guarda {sw_lat, sw_lng, ne_lat, ne_lng}
+    ->height(400)
+    ->zoom(10);
+```
+
+**Modo Legacy:**
+```php
+MapBoundsField::make('area_bounds')
+    ->southWestLat('sw_lat')
+    ->southWestLng('sw_lng')
+    ->northEastLat('ne_lat')
+    ->northEastLng('ne_lng');
 ```
 
 ### Múltiples Ubicaciones en el Mismo Formulario
