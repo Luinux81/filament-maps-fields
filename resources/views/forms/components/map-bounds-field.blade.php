@@ -109,10 +109,17 @@
 
             init() {
                 this.log('🗺️ Inicializando MapBoundsField');
-                
+
                 // Wait for Leaflet to be available
                 if (typeof L === 'undefined') {
                     this.warn('⚠️ Leaflet no está cargado. Asegúrate de incluir Leaflet.js y Leaflet.draw.js');
+                    return;
+                }
+
+                // Check if map is already initialized
+                const mapContainer = document.getElementById('map-bounds-{{ $statePath }}');
+                if (mapContainer._leaflet_id) {
+                    this.log('⚠️ Mapa ya inicializado, omitiendo reinicialización');
                     return;
                 }
 

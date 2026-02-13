@@ -40,6 +40,13 @@
                         return;
                     }
 
+                    // Check if map is already initialized
+                    const mapContainer = document.getElementById('map-bounds-entry-{{ $statePath }}');
+                    if (mapContainer._leaflet_id) {
+                        console.log('⚠️ Mapa ya inicializado, omitiendo reinicialización');
+                        return;
+                    }
+
                     // Initialize map
                     this.map = L.map('map-bounds-entry-{{ $statePath }}', {
                         dragging: false,
