@@ -24,9 +24,29 @@ Este paquete instalará automáticamente sus dependencias:
 - `lbcdev/livewire-maps-core` - El componente Livewire base
 - `lbcdev/map-geometries` - Clases de geometría para mapas
 
-### 2. Incluir Leaflet.js en tu layout
+### 2. Incluir Leaflet.js en tu panel de Filament
 
-Agrega estos scripts en el `<head>` de tu layout de Filament (antes de `@livewireStyles`):
+**Opción recomendada: Usando RenderHook**
+
+Agrega el siguiente código en tu `AdminPanelProvider` (o el provider de tu panel):
+
+```php
+use Filament\Panel;
+
+public function panel(Panel $panel): Panel
+{
+    return $panel
+        // ... otras configuraciones
+        ->renderHook(
+            'panels::head.end',
+            fn(): string => view('filament-maps-fields::hooks.leaflet-assets')->render()
+        );
+}
+```
+
+**Opción alternativa: Layout personalizado**
+
+Si estás usando un layout personalizado de Filament, agrega estos scripts en el `<head>` (antes de `@livewireStyles`):
 
 ```blade
 <!-- Leaflet CSS -->
@@ -35,8 +55,6 @@ Agrega estos scripts en el `<head>` de tu layout de Filament (antes de `@livewir
 <!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 ```
-
-Si estás usando un layout personalizado de Filament, agrega esto en tu archivo de layout.
 
 ### 3. (Opcional) Publicar configuración
 

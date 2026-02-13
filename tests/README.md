@@ -164,7 +164,12 @@ php artisan make:filament-user # Crear usuario Admin, con email: admin@example.c
 
 ### 3. Instalar el Paquete
 
+Necesitas agregar el repositorio del paquete core al  composer.json de la webapp:
+
 ```bash
+cd /workspace/packages/fields/webapp
+composer config repositories.core '{"type": "path", "url": "../../core", "options": {"symlink": true}}'
+composer config repositories.geometries '{"type": "path", "url": "../../geometries", "options": {"symlink": true}}'
 composer require lbcdev/filament-maps-fields:@dev
 ```
 
@@ -195,7 +200,24 @@ protected $fillable = ['name', 'latitude', 'longitude'];
 protected $casts = ['latitude' => 'float', 'longitude' => 'float'];
 ```
 
-### 6. Configurar Recurso Filament
+### 6. Incluir Leaflet.js en el Panel
+
+**AdminPanelProvider** (`app/Providers/Filament/AdminPanelProvider.php`):
+```php
+use Filament\Panel;
+
+public function panel(Panel $panel): Panel
+{
+    return $panel
+        // ... otras configuraciones
+        ->renderHook(
+            'panels::head.end',
+            fn(): string => view('filament-maps-fields::hooks.leaflet-assets')->render()
+        );
+}
+```
+
+### 7. Configurar Recurso Filament
 
 **Resource** (`app/Filament/Resources/LocationResource.php`):
 
@@ -215,7 +237,7 @@ public static function form(Form $form): Form
 }
 ```
 
-### 7. Ejecutar y Probar
+### 8. Ejecutar y Probar
 
 ```bash
 php artisan migrate
