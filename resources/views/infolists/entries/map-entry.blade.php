@@ -11,15 +11,15 @@
 
     @if($latitude !== null && $longitude !== null)
         <div wire:key="{{ $statePath }}-map-entry">
-            <livewire:lbcdev-map 
-                :latitude="$latitude" 
+            <livewire:livewire-map
+                :latitude="$latitude"
                 :longitude="$longitude"
                 :interactive="false"
                 :showLabel="$showLabel"
                 :showPasteButton="false"
                 :height="$height"
                 :zoom="$zoom"
-                wire:key="{{ $statePath }}-lbcdev-map"
+                wire:key="{{ $statePath }}-livewire-map"
             />
         </div>
     @else

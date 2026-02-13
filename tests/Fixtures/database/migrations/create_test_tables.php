@@ -23,6 +23,13 @@ return new class extends Migration
             $table->json('ubicacion')->nullable();
         });
 
+        // Table for JSON mode (standard latitude/longitude)
+        Schema::create('places', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->json('location')->nullable();
+        });
+
         // Table for bounds (traditional mode - separate fields)
         Schema::create('areas', function (Blueprint $table) {
             $table->id();
@@ -40,6 +47,7 @@ return new class extends Migration
     {
         Schema::dropIfExists('locations');
         Schema::dropIfExists('stores');
+        Schema::dropIfExists('places');
         Schema::dropIfExists('areas');
     }
 };

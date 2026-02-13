@@ -203,6 +203,7 @@ protected $casts = ['latitude' => 'float', 'longitude' => 'float'];
 ### 6. Incluir Leaflet.js en el Panel
 
 **AdminPanelProvider** (`app/Providers/Filament/AdminPanelProvider.php`):
+
 ```php
 use Filament\Panel;
 

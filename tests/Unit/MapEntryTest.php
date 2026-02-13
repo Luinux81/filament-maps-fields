@@ -45,6 +45,24 @@ class MapEntryTest extends TestCase
     }
 
     /** @test */
+    public function it_detects_json_mode_when_no_latitude_longitude_configured(): void
+    {
+        $entry = MapEntry::make('location');
+
+        $this->assertFalse($entry->isLegacyMode());
+    }
+
+    /** @test */
+    public function it_detects_legacy_mode_when_latitude_longitude_configured(): void
+    {
+        $entry = MapEntry::make('map')
+            ->latitude('latitude')
+            ->longitude('longitude');
+
+        $this->assertTrue($entry->isLegacyMode());
+    }
+
+    /** @test */
     public function it_can_set_height(): void
     {
         $entry = MapEntry::make('map')

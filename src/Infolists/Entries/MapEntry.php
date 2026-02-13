@@ -1,12 +1,27 @@
 <?php
 
-namespace Lbcdev\FilamentMapField\Infolists\Entries;
+namespace LBCDev\FilamentMapsFields\Infolists\Entries;
 
 use Filament\Infolists\Components\Entry;
 
+/**
+ * MapEntry - Display a map in an infolist
+ *
+ * Supports two modes:
+ * 1. JSON Mode (default): Reads coordinates from a JSON field {latitude: X, longitude: Y}
+ * 2. Legacy Mode: Reads coordinates from separate latitude/longitude fields
+ *
+ * @example JSON Mode
+ * MapEntry::make('location')
+ *
+ * @example Legacy Mode
+ * MapEntry::make('map')
+ *     ->latitude('latitude')
+ *     ->longitude('longitude')
+ */
 class MapEntry extends Entry
 {
-    protected string $view = 'filament-map-field::infolists.entries.map-entry';
+    protected string $view = 'filament-maps-fields::infolists.entries.map-entry';
 
     protected string|null $latitudeField = null;
     protected string|null $longitudeField = null;
@@ -69,19 +84,42 @@ class MapEntry extends Entry
         return $this->showLabel;
     }
 
+    /**
+     * Check if this entry is in Legacy Mode
+     */
+    public function isLegacyMode(): bool
+    {
+        return $this->latitudeField !== null && $this->longitudeField !== null;
+    }
+
+    /**
+     * Get coordinates from the record
+     * Supports both JSON Mode and Legacy Mode
+     */
     public function getCoordinates(): ?array
     {
         try {
-            if (!$this->latitudeField || !$this->longitudeField) {
-                return null;
-            }
-
             $record = $this->getRecord();
 
             if (!$record) {
                 return null;
             }
 
+            // JSON Mode: Read from this entry's state
+            if (!$this->isLegacyMode()) {
+                $state = $this->getState();
+
+                if (is_array($state) && isset($state['latitude'], $state['longitude'])) {
+                    return [
+                        'latitude' => $this->normalizeCoordinate($state['latitude']),
+                        'longitude' => $this->normalizeCoordinate($state['longitude']),
+                    ];
+                }
+
+                return null;
+            }
+
+            // Legacy Mode: Read from separate fields
             $latitude = data_get($record, $this->latitudeField);
             $longitude = data_get($record, $this->longitudeField);
 
@@ -98,7 +136,7 @@ class MapEntry extends Entry
             }
 
             return null;
-        } catch (\Throwable $e) {
+        } catch (\Throwable) {
             // If anything fails, return null
             return null;
         }

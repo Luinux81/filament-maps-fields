@@ -4,8 +4,9 @@
         $coordinates = $getCoordinates();
         $latitude = $coordinates['latitude'];
         $longitude = $coordinates['longitude'];
-        
+
         // Get field configuration
+        $isLegacyMode = $isLegacyMode();
         $latitudeField = $getLatitudeField();
         $longitudeField = $getLongitudeField();
         $height = $getHeight();
@@ -15,7 +16,7 @@
         $interactive = $isInteractive();
         $isDisabled = $isDisabled();
         $statePath = $getStatePath();
-        
+
         // Debug mode can be enabled with ?map_debug=1 in URL or APP_DEBUG_MAP=true in .env
         $debugMode = request()->has('map_debug') || config('app.debug_map', false);
     @endphp
@@ -24,8 +25,10 @@
         x-data="{
             latitude: @js($latitude),
             longitude: @js($longitude),
+            isLegacyMode: @js($isLegacyMode),
             latitudeField: @js($latitudeField),
             longitudeField: @js($longitudeField),
+            statePath: @js($statePath),
             debug: @js($debugMode),
 
             /**
@@ -48,31 +51,53 @@
 
             /**
              * Update the form fields with new coordinates
-             * 
-             * This method handles both simple field names ('latitude')
-             * and dot notation for nested fields ('location.latitude')
+             *
+             * Supports two modes:
+             * - JSON Mode: Updates this field's state with {latitude, longitude}
+             * - Legacy Mode: Updates separate latitude/longitude fields
              */
             updateCoordinates(lat, lng) {
-                if (!this.latitudeField || !this.longitudeField) {
-                    this.warn('Latitude or longitude field not configured');
-                    return;
-                }
-
-                // Build the full path for Livewire's $set method
-                // The 'data.' prefix is required by Filament forms
-                const latPath = 'data.' + this.latitudeField;
-                const lngPath = 'data.' + this.longitudeField;
-
                 this.log('Updating coordinates:', {
-                    latPath,
-                    lngPath,
+                    mode: this.isLegacyMode ? 'Legacy' : 'JSON',
                     latitude: lat,
                     longitude: lng
                 });
 
-                // Update the form fields via Livewire
-                $wire.$set(latPath, lat);
-                $wire.$set(lngPath, lng);
+                if (this.isLegacyMode) {
+                    // Legacy Mode: Update separate fields
+                    if (!this.latitudeField || !this.longitudeField) {
+                        this.warn('Latitude or longitude field not configured in Legacy Mode');
+                        return;
+                    }
+
+                    // Build the full path for Livewire's $set method
+                    // The 'data.' prefix is required by Filament forms
+                    const latPath = 'data.' + this.latitudeField;
+                    const lngPath = 'data.' + this.longitudeField;
+
+                    this.log('Legacy Mode - Updating separate fields:', {
+                        latPath,
+                        lngPath
+                    });
+
+                    // Update the form fields via Livewire
+                    $wire.$set(latPath, lat);
+                    $wire.$set(lngPath, lng);
+                } else {
+                    // JSON Mode: Update this field's state
+                    const fieldPath = this.statePath;
+
+                    this.log('JSON Mode - Updating field:', {
+                        fieldPath,
+                        value: { latitude: lat, longitude: lng }
+                    });
+
+                    // Update this field's state with the coordinates object
+                    $wire.$set(fieldPath, {
+                        latitude: lat,
+                        longitude: lng
+                    });
+                }
 
                 // Update local state for reactivity
                 this.latitude = lat;
@@ -124,11 +149,15 @@
         }"
         wire:key="{{ $statePath }}-map-field"
     >
-        {{-- 
+        {{--
             Render the livewire-maps-core component
-            
+
             Note: We use 'livewire:livewire-map' which is the correct component name
             from the lbcdev/livewire-maps-core package
+
+            The component works in both modes:
+            - JSON Mode: Coordinates are stored in this field's state
+            - Legacy Mode: Coordinates are stored in separate fields
         --}}
         <livewire:livewire-map
             :latitude="$latitude"

@@ -4,6 +4,23 @@ Componentes de Filament para trabajar con mapas interactivos usando Leaflet.js.
 
 Este paquete proporciona campos de formulario y entradas de infolist para seleccionar ubicaciones en mapas interactivos dentro de paneles de administración Filament.
 
+## Características
+
+✨ **Dual Mode** - Soporta dos modos de almacenamiento:
+- **Modo JSON** (recomendado): Guarda coordenadas como `{latitude: X, longitude: Y}` en un solo campo
+- **Modo Legacy**: Guarda coordenadas en campos separados para compatibilidad con código existente
+
+🗺️ **Mapas Interactivos** - Basado en Leaflet.js con soporte completo para:
+- Click para seleccionar ubicación
+- Pegar coordenadas desde el portapapeles
+- Zoom y navegación
+- Modo solo lectura
+
+🎨 **Integración Perfecta con Filament** - Funciona como cualquier otro campo de Filament:
+- Validación integrada
+- Soporte para notación de punto (dot notation)
+- Compatible con formularios y recursos
+
 ## Requisitos
 
 - PHP 8.1 o superior
@@ -68,9 +85,63 @@ php artisan vendor:publish --tag=livewire-maps-config
 
 ### MapField en Formularios
 
-El componente `MapField` te permite agregar un mapa interactivo a tus formularios de Filament. Los usuarios pueden hacer clic en el mapa para seleccionar una ubicación, y las coordenadas se guardarán automáticamente en los campos que especifiques.
+El componente `MapField` te permite agregar un mapa interactivo a tus formularios de Filament. Los usuarios pueden hacer clic en el mapa para seleccionar una ubicación.
 
-#### Ejemplo Simple
+**MapField soporta dos modos de operación:**
+
+1. **Modo JSON (Recomendado)** - Las coordenadas se guardan como JSON en un solo campo
+2. **Modo Legacy** - Las coordenadas se guardan en campos separados de latitud/longitud
+
+#### Comparación Rápida
+
+| Característica | Modo JSON | Modo Legacy |
+|----------------|-----------|-------------|
+| **Configuración** | `MapField::make('location')` | `MapField::make('map')->latitude('lat')->longitude('lng')` |
+| **Campos en BD** | 1 campo JSON | 2 campos decimales |
+| **Simplicidad** | ✅ Muy simple | ⚠️ Requiere configuración |
+| **Uso recomendado** | Proyectos nuevos | Proyectos existentes con campos separados |
+| **Migración** | Fácil desde Legacy | - |
+
+---
+
+### Modo JSON (Recomendado)
+
+En este modo, el campo guarda las coordenadas como un objeto JSON `{latitude: X, longitude: Y}` directamente en el campo especificado.
+
+#### Ventajas del Modo JSON
+
+✅ **Más simple** - No necesitas configurar campos adicionales
+✅ **Más limpio** - Un solo campo en la base de datos
+✅ **Más intuitivo** - El campo del mapa guarda la ubicación
+✅ **Menos propenso a errores** - No hay que sincronizar múltiples campos
+
+#### Estructura de Base de Datos
+
+```php
+// Migration
+Schema::create('places', function (Blueprint $table) {
+    $table->id();
+    $table->string('name');
+    $table->json('location')->nullable();  // Guarda {latitude: X, longitude: Y}
+});
+```
+
+#### Modelo
+
+```php
+use Illuminate\Database\Eloquent\Model;
+
+class Place extends Model
+{
+    protected $fillable = ['name', 'location'];
+
+    protected $casts = [
+        'location' => 'array',  // Cast automático a array
+    ];
+}
+```
+
+#### Uso en Formulario
 
 ```php
 use LBCDev\FilamentMapsFields\Forms\Components\MapField;
@@ -81,51 +152,174 @@ public static function form(Form $form): Form
     return $form->schema([
         TextInput::make('name')
             ->required(),
-            
-        MapField::make('location')
+
+        MapField::make('location')  // ¡Así de simple!
+            ->height(400)
+            ->columnSpanFull(),
+    ]);
+}
+```
+
+#### Acceder a las Coordenadas
+
+```php
+// Crear
+$place = Place::create([
+    'name' => 'Madrid',
+    'location' => [
+        'latitude' => 40.4168,
+        'longitude' => -3.7038,
+    ],
+]);
+
+// Leer
+$latitude = $place->location['latitude'];   // 40.4168
+$longitude = $place->location['longitude']; // -3.7038
+
+// Actualizar
+$place->update([
+    'location' => [
+        'latitude' => 41.3851,
+        'longitude' => 2.1734,
+    ],
+]);
+```
+
+---
+
+### Modo Legacy (Campos Separados)
+
+En este modo, el campo del mapa es "virtual" y actualiza campos separados de latitud y longitud. Este modo existe para mantener compatibilidad con código existente.
+
+#### Cuándo Usar Modo Legacy
+
+- Cuando ya tienes una base de datos con campos `latitude` y `longitude` separados
+- Cuando necesitas mantener compatibilidad con código existente
+- Cuando otros sistemas esperan campos separados
+
+#### Estructura de Base de Datos
+
+```php
+// Migration
+Schema::create('locations', function (Blueprint $table) {
+    $table->id();
+    $table->string('name');
+    $table->decimal('latitude', 10, 8)->nullable();
+    $table->decimal('longitude', 11, 8)->nullable();
+});
+```
+
+#### Modelo
+
+```php
+use Illuminate\Database\Eloquent\Model;
+
+class Location extends Model
+{
+    protected $fillable = ['name', 'latitude', 'longitude'];
+}
+```
+
+#### Uso en Formulario
+
+```php
+use LBCDev\FilamentMapsFields\Forms\Components\MapField;
+use Filament\Forms\Components\TextInput;
+
+public static function form(Form $form): Form
+{
+    return $form->schema([
+        TextInput::make('name')
+            ->required(),
+
+        MapField::make('map')
             ->latitude('latitude')      // Campo donde se guarda la latitud
-            ->longitude('longitude'),   // Campo donde se guarda la longitud
-            
-        // Los campos de coordenadas pueden estar ocultos
+            ->longitude('longitude')    // Campo donde se guarda la longitud
+            ->height(400)
+            ->columnSpanFull(),
+
+        // Opcionalmente puedes mostrar los campos
         TextInput::make('latitude')
-            ->hidden(),
+            ->disabled()
+            ->dehydrated(),
         TextInput::make('longitude')
-            ->hidden(),
+            ->disabled()
+            ->dehydrated(),
     ]);
 }
 ```
 
 #### Ejemplo con Campos Anidados (Dot Notation)
 
-```php
-use LBCDev\FilamentMapsFields\Forms\Components\MapField;
-use Filament\Forms\Components\Group;
-use Filament\Forms\Components\TextInput;
+El modo Legacy también soporta notación de punto para campos anidados:
 
-public static function form(Form $form): Form
-{
-    return $form->schema([
-        TextInput::make('name')
-            ->required(),
-            
-        // Los campos pueden estar anidados
-        Group::make([
-            MapField::make('location_map')
-                ->latitude('location.latitude')      // Notación de punto
-                ->longitude('location.longitude'),   // Notación de punto
-                
-            TextInput::make('location.latitude')
-                ->label('Latitud')
-                ->disabled()
-                ->dehydrated(),
-                
-            TextInput::make('location.longitude')
-                ->label('Longitud')
-                ->disabled()
-                ->dehydrated(),
-        ]),
-    ]);
-}
+```php
+MapField::make('location_map')
+    ->latitude('location.latitude')      // Notación de punto
+    ->longitude('location.longitude')    // Notación de punto
+```
+
+---
+
+### Migrar de Modo Legacy a Modo JSON
+
+Si tienes una aplicación existente en Modo Legacy y quieres migrar a Modo JSON:
+
+#### 1. Crear migración para añadir campo JSON
+
+```php
+Schema::table('locations', function (Blueprint $table) {
+    $table->json('location')->nullable()->after('name');
+});
+```
+
+#### 2. Migrar datos existentes
+
+```php
+use App\Models\Location;
+
+Location::whereNotNull('latitude')
+    ->whereNotNull('longitude')
+    ->each(function ($location) {
+        $location->update([
+            'location' => [
+                'latitude' => $location->latitude,
+                'longitude' => $location->longitude,
+            ],
+        ]);
+    });
+```
+
+#### 3. Actualizar el modelo
+
+```php
+protected $fillable = ['name', 'location'];
+
+protected $casts = [
+    'location' => 'array',
+];
+```
+
+#### 4. Actualizar el formulario
+
+```php
+// Antes (Legacy)
+MapField::make('map')
+    ->latitude('latitude')
+    ->longitude('longitude')
+
+// Después (JSON)
+MapField::make('location')
+```
+
+#### 5. (Opcional) Eliminar campos antiguos
+
+Una vez verificado que todo funciona:
+
+```php
+Schema::table('locations', function (Blueprint $table) {
+    $table->dropColumn(['latitude', 'longitude']);
+});
 ```
 
 ### Configuración del MapField
@@ -133,31 +327,41 @@ public static function form(Form $form): Form
 El `MapField` acepta varios métodos de configuración:
 
 ```php
+// Modo JSON (simple)
 MapField::make('location')
-    ->latitude('latitude')          // Campo de latitud (requerido)
-    ->longitude('longitude')        // Campo de longitud (requerido)
     ->height(500)                   // Altura del mapa en píxeles (default: 400)
     ->zoom(15)                      // Nivel de zoom inicial (default: 15)
     ->showPasteButton()            // Mostrar botón para pegar coordenadas
     ->showLabel()                   // Mostrar etiqueta con coordenadas (default: true)
     ->interactive(true)             // Permitir interacción (default: true)
     ->readOnly()                    // Hacer el mapa de solo lectura
+
+// Modo Legacy (requiere latitude y longitude)
+MapField::make('map')
+    ->latitude('latitude')          // Campo de latitud (requerido en modo Legacy)
+    ->longitude('longitude')        // Campo de longitud (requerido en modo Legacy)
+    ->height(500)
+    ->zoom(15)
 ```
 
 ### Métodos Disponibles
 
-#### `latitude(string $field)`
+#### `latitude(string $field)` - Solo Modo Legacy
 
 Define el campo donde se guardará la latitud. Soporta notación de punto para campos anidados.
+
+**Nota:** Si usas este método, el campo entra en Modo Legacy.
 
 ```php
 ->latitude('latitude')              // Campo simple
 ->latitude('location.latitude')     // Campo anidado
 ```
 
-#### `longitude(string $field)`
+#### `longitude(string $field)` - Solo Modo Legacy
 
 Define el campo donde se guardará la longitud. Soporta notación de punto para campos anidados.
+
+**Nota:** Si usas este método junto con `latitude()`, el campo entra en Modo Legacy.
 
 ```php
 ->longitude('longitude')            // Campo simple
@@ -401,9 +605,29 @@ class Location extends Model
 - ✅ Laravel 10.x, 11.x, 12.x
 - ✅ PHP 8.1, 8.2, 8.3
 
+## MapEntry en Infolists
+
+MapEntry muestra un mapa de solo lectura en infolists. Soporta Dual Mode igual que MapField.
+
+**Modo JSON:**
+```php
+use LBCDev\FilamentMapsFields\Infolists\Entries\MapEntry;
+
+MapEntry::make('location')
+    ->height(300)
+    ->zoom(15)
+```
+
+**Modo Legacy:**
+```php
+MapEntry::make('map')
+    ->latitude('latitude')
+    ->longitude('longitude')
+    ->height(300)
+```
+
 ## Próximas Características
 
-- [ ] MapEntry para Infolists
 - [ ] Soporte para múltiples marcadores en un solo campo
 - [ ] Integración con servicios de geocodificación
 - [ ] Soporte para otras geometrías (polígonos, líneas)

@@ -6,11 +6,20 @@ use Filament\Forms\Components\Field;
 
 /**
  * MapField - Filament form field for interactive maps
- * 
+ *
  * This component integrates the livewire-maps-core component into Filament forms,
- * allowing users to select coordinates on an interactive map and store them
- * in separate latitude/longitude fields.
- * 
+ * allowing users to select coordinates on an interactive map.
+ *
+ * Supports two modes:
+ *
+ * 1. JSON Mode (Default):
+ *    MapField::make('location')
+ *    Stores coordinates as JSON: {latitude: X, longitude: Y}
+ *
+ * 2. Legacy Mode (Backward Compatible):
+ *    MapField::make('map')->latitude('latitude')->longitude('longitude')
+ *    Stores coordinates in separate fields
+ *
  * @package LBCDev\FilamentMapsFields
  */
 class MapField extends Field
@@ -21,12 +30,12 @@ class MapField extends Field
     protected string $view = 'filament-maps-fields::forms.components.map-field';
 
     /**
-     * Name of the latitude field in the form
+     * Name of the latitude field in the form (Legacy Mode only)
      */
     protected ?string $latitudeField = null;
 
     /**
-     * Name of the longitude field in the form
+     * Name of the longitude field in the form (Legacy Mode only)
      */
     protected ?string $longitudeField = null;
 
@@ -57,16 +66,50 @@ class MapField extends Field
 
     /**
      * Setup the field
-     * 
+     *
+     * Configures the field based on the mode:
+     * - Legacy Mode: If latitude/longitude fields are configured, mark as dehydrated(false)
+     * - JSON Mode: If no latitude/longitude fields, store coordinates as JSON in this field
+     *
      * @return void
      */
     protected function setUp(): void
     {
         parent::setUp();
 
-        // The field itself doesn't store data, it only facilitates
-        // updating other fields (latitude/longitude), so we don't need
-        // validation on this field itself
+        // Configure dehydration and state management
+        $this->afterStateHydrated(function (MapField $component, $state): void {
+            // In JSON mode, ensure state is properly formatted
+            if (!$component->isLegacyMode()) {
+                // If state is already an array with lat/lng, keep it
+                // Otherwise, initialize as null
+                if (!is_array($state) || !isset($state['latitude'], $state['longitude'])) {
+                    $component->state(null);
+                }
+            }
+        });
+
+        $this->dehydrateStateUsing(function (MapField $component, $state) {
+            // In Legacy Mode, don't save this field (it's virtual)
+            if ($component->isLegacyMode()) {
+                return null;
+            }
+
+            // In JSON Mode, save the coordinates as JSON
+            return $state;
+        });
+    }
+
+    /**
+     * Check if the field is in Legacy Mode
+     *
+     * Legacy Mode is active when both latitude and longitude fields are configured
+     *
+     * @return bool
+     */
+    public function isLegacyMode(): bool
+    {
+        return $this->latitudeField !== null && $this->longitudeField !== null;
     }
 
     /**
@@ -248,28 +291,42 @@ class MapField extends Field
 
     /**
      * Get the current coordinates from the form state
-     * 
+     *
      * This method safely retrieves the latitude and longitude values
-     * from the form, supporting both simple field names and dot notation
-     * for nested fields.
-     * 
-     * Examples:
-     * - Simple: 'latitude', 'longitude'
-     * - Nested: 'location.latitude', 'location.longitude'
-     * 
+     * from the form, supporting both modes:
+     *
+     * JSON Mode:
+     * - Reads from the field's own state: {latitude: X, longitude: Y}
+     *
+     * Legacy Mode:
+     * - Reads from separate fields using dot notation support
+     * - Examples: 'latitude', 'longitude' or 'location.latitude', 'location.longitude'
+     *
      * @return array{latitude: float|null, longitude: float|null}
      */
     public function getCoordinates(): array
     {
         try {
-            // If fields are not configured, return null coordinates
-            if (!$this->latitudeField || !$this->longitudeField) {
+            // JSON Mode: Read from this field's state
+            if (!$this->isLegacyMode()) {
+                $state = $this->getState();
+
+                // If state is an array with latitude and longitude
+                if (is_array($state) && isset($state['latitude'], $state['longitude'])) {
+                    return [
+                        'latitude' => $this->normalizeCoordinate($state['latitude']),
+                        'longitude' => $this->normalizeCoordinate($state['longitude']),
+                    ];
+                }
+
+                // No coordinates set yet
                 return [
                     'latitude' => null,
                     'longitude' => null,
                 ];
             }
 
+            // Legacy Mode: Read from separate fields
             $container = $this->getContainer();
 
             if (!$container) {
@@ -304,7 +361,7 @@ class MapField extends Field
                 'latitude' => $latitude,
                 'longitude' => $longitude,
             ];
-        } catch (\Throwable $e) {
+        } catch (\Throwable) {
             // If anything fails, safely return null coordinates
             // This prevents the form from breaking if there are issues
             return [
