@@ -11,7 +11,7 @@ use Filament\Forms\Components\Field;
  * Requires Leaflet.js and Leaflet.draw plugin.
  *
  * Supports two modes:
- * - JSON Mode (default): Stores bounds as {sw_lat, sw_lng, ne_lat, ne_lng} in a single field
+ * - JSON Mode (default) Stores bounds as {sw_lat, sw_lng, ne_lat, ne_lng} in a single field
  * - Legacy Mode: Stores bounds in 4 separate fields
  *
  * @example JSON Mode (recommended)
