@@ -284,16 +284,28 @@ class MapBoundsField extends Field
             // Legacy mode: read from separate fields
             $container = $this->getContainer();
 
+            // Use getState(false) to avoid triggering validation
+            try {
+                $state = $container->getState(false);
+            } catch (\Exception $e) {
+                $state = [];
+            }
+
             return [
-                'sw_lat' => data_get($container->getState(), $this->southWestLatField),
-                'sw_lng' => data_get($container->getState(), $this->southWestLngField),
-                'ne_lat' => data_get($container->getState(), $this->northEastLatField),
-                'ne_lng' => data_get($container->getState(), $this->northEastLngField),
+                'sw_lat' => data_get($state, $this->southWestLatField),
+                'sw_lng' => data_get($state, $this->southWestLngField),
+                'ne_lat' => data_get($state, $this->northEastLatField),
+                'ne_lng' => data_get($state, $this->northEastLngField),
             ];
         }
 
         // JSON mode: read from field state
-        $state = $this->getState();
+        // Use getState(false) to avoid triggering validation
+        try {
+            $state = $this->getState(false);
+        } catch (\Exception $e) {
+            $state = null;
+        }
 
         if (is_array($state) && !empty($state)) {
             return [
