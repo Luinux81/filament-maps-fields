@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-10-22
+
+### Added
+
+- Support for Laravel 13 (`illuminate/contracts ^13.0`)
+
+### Changed
+
+- require-dev: `orchestra/testbench` `^8.0|^9.0|^10.0|^11.0` and `phpunit/phpunit` `^10.0|^11.0` (Testbench 11 = Laravel 13)
+
 ## [1.0.0] - 2026-02-17
 
 ### Added
@@ -49,5 +59,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `EXAMPLES.md` - Usage examples
   - `TROUBLESHOOTING.md` - Common issues and solutions
 
-[Unreleased]: https://github.com/Luinux81/filament-maps-fields/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/Luinux81/filament-maps-fields/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/Luinux81/filament-maps-fields/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/Luinux81/filament-maps-fields/releases/tag/v1.0.0
