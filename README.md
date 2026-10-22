@@ -24,7 +24,7 @@ Este paquete proporciona campos de formulario y entradas de infolist para selecc
 ## Requisitos
 
 - PHP 8.1 o superior
-- Laravel 10.x, 11.x o 12.x
+- Laravel 10.x, 11.x, 12.x o 13.x
 - Filament 3.x o 4.x
 - Livewire 3.x
 
@@ -633,7 +633,7 @@ class Location extends Model
 - ✅ Filament 3.x
 - ✅ Filament 4.x
 - ✅ Livewire 3.x
-- ✅ Laravel 10.x, 11.x, 12.x
+- ✅ Laravel 10.x, 11.x, 12.x, 13.x
 - ✅ PHP 8.1, 8.2, 8.3
 
 ## MapEntry en Infolists
